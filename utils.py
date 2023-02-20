@@ -32,4 +32,4 @@ def show_samples(x, y, n_samps):
         plt.subplot(2, 2, idx + 1)
         plt.imshow(image, cmap="gray")
         plt.title(f"Label : {label}")
-plt.show()
+    plt.show()
