@@ -30,7 +30,8 @@ class FFNetwork(keras.Model):
     @tf.function(reduce_retracing=True)
     def predict_one_sample(self, x):
         goodness_per_label = []
-        x = tf.reshape(x, [tf.shape(x)[0] * tf.shape(x)[1]])
+        if len(x.shape) == 2:
+            x = tf.reshape(x, [tf.shape(x)[0] * tf.shape(x)[1]])
         for label in range(10):
             h, label = self.overlay_y_on_x(data=(x, label))
             h = tf.reshape(h, [-1, tf.shape(h)[0]])
@@ -54,7 +55,8 @@ class FFNetwork(keras.Model):
     @tf.function(jit_compile=True)
     def train_step(self, data):
         x, y = data
-        x = tf.reshape(x, [-1, tf.shape(x)[1] * tf.shape(x)[2]])
+        if len(x.shape) == 3:
+            x = tf.reshape(x, [-1, tf.shape(x)[1] * tf.shape(x)[2]])
         x_pos, y = tf.map_fn(fn=self.overlay_y_on_x, elems=(x, y))
         random_y = tf.random.shuffle(y)
         x_neg, y = tf.map_fn(fn=self.overlay_y_on_x, elems=(x, random_y))
