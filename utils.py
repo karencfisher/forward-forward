@@ -20,7 +20,7 @@ def embed(x, y, neg=False):
         x_enc[i, 0, :n_classes] = label_enc[:]
     return x_enc
 
-def show_samples(x, y, n_samps):
+def show_samples(x, y, n_samps, labels=None):
     imgs = []
     for _ in range(n_samps):
         idx = random.randint(0, x.shape[0] - 1)
@@ -29,6 +29,8 @@ def show_samples(x, y, n_samps):
     plt.figure(figsize=(10, 10))
     for idx, item in enumerate(imgs):
         image, label = item
+        if labels is not None:
+            label = labels[label]
         plt.subplot(2, 2, idx + 1)
         plt.imshow(image, cmap="gray")
         plt.title(f"Label : {label}")
