@@ -4,17 +4,26 @@ from tensorflow import keras
 
 
 class FFDense(keras.layers.Layer):
-    def __init__(self, units, activation, lr=0.03, thresh=1.5, iterations=50, **kwargs):
+    def __init__(self, units, activation, input_shape=None, lr=0.03, thresh=1.5, 
+                 iterations=50, **kwargs):
         super().__init__(**kwargs)
         self.thresh = thresh
         self.iterations = iterations
         self.loss_metric = keras.metrics.Mean()
         self.optimizer = keras.optimizers.Adam(learning_rate=lr)
 
-        self.dense = keras.layers.Dense(
-            units=units,
-            activation=activation,
-        )
+        if input_shape is None:
+            self.dense = keras.layers.Dense(
+                units=units,
+                activation=activation
+            )
+        else:
+            self.dense = keras.layers.Dense(
+                units=units,
+                activation=activation,
+                input_shape=input_shape
+            )
+
 
     def call(self, x):
         x_norm = tf.norm(x, ord=2, axis=1, keepdims=True)
