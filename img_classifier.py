@@ -48,65 +48,61 @@ class ImageClassifier:
         for y in range(self.n_classes):
             one_hot = utils.onehot_encode(y, self.n_classes)
             x_labeled = np.concatenate([one_hot, x])
+            x_labeled = np.expand_dims(x_labeled, 0)
+            h = x_labeled
             good_layers = []
             for layer in self.layer_list:
-                h = layer(x_labeled)
+                h = layer(h)
                 good = tf.math.reduce_mean(tf.math.pow(h, 2), 1).numpy()
                 good_layers.append(good)
             good_per_label.append(np.mean(good_layers))
-        return np.argmax(good_per_label)    
+        return np.argmax(good_per_label), h    
 
     def fit(self, x_batches, epochs=5):
         history = []
         num_examples = x_batches.reduce(0, lambda x, _: x + 1).numpy()
+        gg = utils.GasGuage(num_examples)
         for epoch in range(epochs):
-            print(f'Epoch {epoch + 1}\n[{" " * 20}]', end='')
+            print(f'Epoch {epoch + 1}')
+            gg.begin()
             losses = []
-            count = 1
             start_time = time.time()
-            for image_batch, label_batch in x_batches:
+            for count, batch in enumerate(x_batches):
                 # Generate latent images
+                image_batch, label_batch = batch
                 latent_imgs = self.extractor.predict(image_batch, verbose=0)
 
                 # Pass them through the FFDense layers
                 mean_res = self.FF_fit(latent_imgs, label_batch)
                 losses.append(mean_res)
                 
-                percent_done = int(count / num_examples * 100)
-                if percent_done > 0 and percent_done % 5 == 0:
-                    interval = percent_done // 5
-                    print(f'\r[{"=" * interval}{" " * (20-interval)}]', end='')
-                count += 1
+                # update progress
+                gg.update(count + 1)
             mean_losses = sum(losses) / len(losses)
             elapsed = time.time() - start_time
-            min = int(elapsed // 60)
-            sec = int(elapsed % 60)
-            print(f' - time={min}m {sec:02d}s - loss={mean_losses:.4f}')
+            gg.done(f'{utils.time_str(elapsed)} - loss: {mean_losses:.4f}')
             history.append(mean_losses)
-        return history
+        return {'loss': history}
     
     def predict(self, x_batches):
         labels = []
+        logits = []
         num_examples = x_batches.reduce(0, lambda x, _: x + 1).numpy()
-        count = 1
+        gg = utils.GasGuage(num_examples)
+        gg.begin()
         start_time = time.time()
-        print(f'Inferring [{" " * 20}]', end='')
-        for image_batch, label_batch in x_batches:
+        for count, batch in enumerate(x_batches):
             # Generate latent images
-            latent_imgs = self.extractor.predict(image_batch)
+            image_batch, _ = batch
+            latent_imgs = self.extractor.predict(image_batch, verbose=0)
 
             # Do inference through the FFDense layers
             for example in latent_imgs:
-                label = self.FF_predict(example)
+                label, h = self.FF_predict(example)
                 labels.append(label)
-            
-            percent_done = int(count / num_examples * 100)
-            if percent_done > 0 and percent_done % 5 == 0:
-                interval = percent_done // 5
-                print(f'\r[{"=" * interval}{" " * (20-interval)}]', end='')
-            count += 1
+                logits.append(h)
+            gg.update(count + 1)
+
         elapsed = time.time() - start_time
-        min = int(elapsed // 60)
-        sec = int(elapsed % 60)
-        print(f' - time={min}m {sec:02d}s')
+        gg.done(utils.time_str(elapsed))
         return labels
