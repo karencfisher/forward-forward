@@ -56,7 +56,7 @@ class ImageClassifier:
                 good = tf.math.reduce_mean(tf.math.pow(h, 2), 1).numpy()
                 good_layers.append(good)
             good_per_label.append(np.mean(good_layers))
-        return np.argmax(good_per_label), h    
+        return np.argmax(good_per_label)    
 
     def fit(self, x_batches, epochs=5):
         history = []
@@ -86,7 +86,6 @@ class ImageClassifier:
     
     def predict(self, x_batches):
         labels = []
-        logits = []
         num_examples = x_batches.reduce(0, lambda x, _: x + 1).numpy()
         gg = utils.GasGuage(num_examples)
         gg.begin()
@@ -98,11 +97,10 @@ class ImageClassifier:
 
             # Do inference through the FFDense layers
             for example in latent_imgs:
-                label, h = self.FF_predict(example)
+                label = self.FF_predict(example)
                 labels.append(label)
-                logits.append(h)
-            gg.update(count + 1)
 
+            gg.update(count + 1)
         elapsed = time.time() - start_time
         gg.done(utils.time_str(elapsed))
         return labels
