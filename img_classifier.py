@@ -7,7 +7,7 @@ import utils
 
 
 class ImageClassifier:
-    def __init__(self, extractor, layers, n_classes, learning_rate=0.03):
+    def __init__(self, extractor, layers, n_classes, iterations=50, learning_rate=0.03):
         self.extractor = extractor
         input_shape = self.extractor.output.shape[1]
         self.layer_list = []
@@ -16,7 +16,8 @@ class ImageClassifier:
             self.layer_list += [
             FFDense(layers[i], 
                     activation='relu', 
-                    input_shape=(shape,))
+                    input_shape=(shape,),
+                    iterations=iterations)
             ]
         
         self.learning_rate = learning_rate
