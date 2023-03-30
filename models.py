@@ -7,14 +7,14 @@ from layers import FFDense
 
 
 class FFNetwork(keras.Model):
-    def __init__(self, dims, **kwargs):
+    def __init__(self, dims, iterations=50, **kwargs):
         super().__init__(**kwargs)
         self.loss_var = tf.Variable(0.0, trainable=False, dtype=tf.float32)
         self.loss_count = tf.Variable(0.0, trainable=False, dtype=tf.float32)
         self.layer_list = [keras.Input(shape=(dims[0],))]
         for d in range(len(dims) - 1):
             self.layer_list += [
-                FFDense(dims[d + 1], activation='relu')
+                FFDense(dims[d + 1], activation='relu', iterations=iterations)
             ]
 
     @tf.function(reduce_retracing=True)

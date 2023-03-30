@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import accuracy_score, confusion_matrix
+import pandas as pd
 
 
 class Normalize:
@@ -114,3 +115,33 @@ def embed(x, y, neg=False):
                 np.random.shuffle(label_enc)
         x_enc[i, 0, :n_classes] = label_enc[:]
     return x_enc
+
+def compare(predicted, actual, data, misses_df):
+    x_test, y_hat, y_test = data
+    cond = (misses_df['Predicted'] == predicted) & (misses_df['Actual'] == actual)
+    examples = misses_df[cond]['Example']
+
+    samps = random.sample(list(examples), 4)
+    imgs = []
+    for samp in samps:
+        imgs.append((x_test[samp], y_hat[samp], y_test[samp]))
+
+    plt.figure(figsize=(10, 10))
+    for idx, item in enumerate(imgs):
+        image, predlabel, label = item
+        plt.subplot(2, 2, idx + 1)
+        plt.imshow(image, cmap="gray")
+        plt.title(f"Predicted: {predlabel} Actual: {label}")
+    plt.show()
+
+def get_worst(y_hat, y_test, num_errors):
+    misses_df = pd.DataFrame(columns=['Predicted', 'Actual'])
+    misses_df['Predicted'] = y_hat
+    misses_df['Actual'] = y_test
+    cond = misses_df['Predicted'] != misses_df['Actual']
+    misses_df = misses_df[cond]
+    misses_df = misses_df.sort_values(by=['Predicted', 'Actual'])
+    misses_df.reset_index(inplace=True)
+    misses_df = misses_df.rename(columns = {'index':'Example'})
+    top_errors = misses_df.groupby(['Predicted', 'Actual']).size().sort_values(ascending=False).head(num_errors)
+    return misses_df, top_errors
