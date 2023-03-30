@@ -85,11 +85,13 @@ def plot_history(history):
 
     plt.show()
 
-def evaluate(y_true, y_pred, class_names, desc=''):
+def evaluate(y_true, y_pred, class_names=None, figsize=20, desc=''):
     accuracy = accuracy_score(y_true, y_pred)
     print(f'{desc} Accuracy = {accuracy * 100:.2f}%')
     cm = confusion_matrix(y_true, y_pred)
-    plt.figure(figsize=(20, 20))
+    plt.figure(figsize=(figsize, figsize))
+    if class_names is None:
+        class_names = [str(i) for i in range(max(y_true) + 1)]
     sns.heatmap(cm,
                 annot=True,
                 fmt='.2f',
@@ -116,7 +118,7 @@ def embed(x, y, neg=False):
         x_enc[i, 0, :n_classes] = label_enc[:]
     return x_enc
 
-def compare(predicted, actual, data, misses_df):
+def compare(predicted, actual, data, misses_df, classes=None):
     x_test, y_hat, y_test = data
     cond = (misses_df['Predicted'] == predicted) & (misses_df['Actual'] == actual)
     examples = misses_df[cond]['Example']
@@ -129,6 +131,8 @@ def compare(predicted, actual, data, misses_df):
     plt.figure(figsize=(10, 10))
     for idx, item in enumerate(imgs):
         image, predlabel, label = item
+        if classes is not None:
+            predlabel, label = classes[predlabel], classes[label]
         plt.subplot(2, 2, idx + 1)
         plt.imshow(image, cmap="gray")
         plt.title(f"Predicted: {predlabel} Actual: {label}")
